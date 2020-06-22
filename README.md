@@ -1,2 +1,2 @@
 # test_git
-write the node code in arduino(linkit 7697)
+write the Lora node in arduino(linkit 7697)
