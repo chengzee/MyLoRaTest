@@ -1,5 +1,5 @@
 # test_git
-write the Lora node in arduino(linkit 7697) and Lora gateway in Raspberry Pi 3B+
+write the Lora node in arduino(linkit 7697) and Lora gateway in Raspberry Pi 3B+ /n
 althought the newest version Lora can't immediately use in linkit 7697, but just rewrite some lines in sourse library, it will work very well.
 
 # reference
