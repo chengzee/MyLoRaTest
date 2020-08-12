@@ -1,6 +1,6 @@
 /*
   LoRa Simple Node
-  Temperature and Humidity sensor: DHT 22
+  Temperature and Humidity sensor: DHT22
   Light sensor:BH1750
   Transition module: LoRa sx1278  
 */
@@ -14,6 +14,7 @@
 
 #define DHTPIN 4
 #define DHTTYPE DHT22
+#define DHTVPIN 5
 
 DHT dht(DHTPIN, DHTTYPE);
 BH1750 lightMeter;
@@ -48,14 +49,15 @@ void setup() {
   while (!Serial);
   Serial.println("LoRa Node");
   pinMode(irqPin, OUTPUT);
-
-//  LoRa.setPins(csPin, resetPin, irqPin);
+  pinMode(DHTVPIN, OUTPUT);
 }
 
 void loop() {
   LoRa.setPins(csPin, resetPin, irqPin);
-
-  // start the dht22
+  
+  digitalWrite(DHTVPIN, HIGH);
+  
+  // start the DHT22
   dht.begin();
   // Wait a few seconds between measurements.
   delay(1000);
@@ -88,6 +90,9 @@ void loop() {
     Serial.println("Failed to read from bh1750 sensor!");
     return;
   }
+  
+  digitalWrite(DHTVPIN, LOW);
+  
   // ------------------------------------------------------------------------------
   // Send
   //  start lora
@@ -129,5 +134,5 @@ void loop() {
   
   digitalWrite(irqPin, LOW);
   counter++;
-  enterSleep(299250,3);
+  enterSleep(298000,3);
 }
