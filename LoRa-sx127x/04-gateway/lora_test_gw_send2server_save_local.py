@@ -31,6 +31,7 @@ sys.path.insert(0, '../')
 from SX127x.LoRa import *
 from SX127x.board_config import BOARD
 from SX127x.LoRaArgumentParser import LoRaArgumentParser
+from datetime import datetime
 
 # in python 2
 import urlparse
@@ -47,17 +48,18 @@ method='/api/sendDatas/'
 BOARD.setup()
 
 parser = LoRaArgumentParser("Continous LoRa receiver.")
-
+'''
 # in python3
 try:
     with open('/home/pi/Documents/test.csv', 'wt', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['name', 'height', 'weight'])
+# in python2
 except TypeError:
     with open('test.csv', 'wb') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['name', 'height', 'weight'])
-
+'''
 # python2
 try:
     import sys
@@ -67,10 +69,13 @@ except:
     pass
 
 # Create Node list
-Nodes = 3      # number of Nodes
+Nodes = 12        # number of Nodes
+NodesFollow = 6  # number of Nodes follow the plant bed
 node_list = []
 for n in range(Nodes):
     node_list.append("Node"+str(n+1))
+for n in range(NodesFollow):
+    node_list.append("Node9"+str(n+1))
 
 number_node = 0            # No. node
 
@@ -96,35 +101,33 @@ class LoRaGateWay(LoRa):
             # print("Length: {}".format( len(data) ))
             # print("Raw RX: {}".format( data ))
             info = data.split(",")
+            # print(data)
             for i in node_list:
                 if(len(info)==5):
                     if(info[0] == i):
+                        print((type(i))
                         print("Time: {}".format( str(time.ctime() )))
                         print("This is {}.".format(info[0]))
                         print("temperature:{}".format(float(info[3])))
                         print("humidity:{}".format(float(info[2])))
                         print("par:{}".format(float(info[4])))
+                        print("count:{}".format(int(info[1])))
+                        
+                        # save in Pi...
+                        with open('sensor' + i + '.csv', 'a+') as csvfile:
+                            writer = csv.writer(csvfile)
+                            nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            writer.writerow([nowT, info[2], info[3], info[4], info[1]]) 
+
                         res = requests.post(url+method+str(i[4:]),{
                             'temperature': float(info[3]),
                             'wetness':float(info[2]),
-                            'par':float(info[4])
+                            'par':float(info[4]),
+                            'time':int(time.time())
                         })
                         print(res)
-                        
-                if(len(info)==4):
-                    if(info[0] == i):
-                        print("Time: {}".format( str(time.ctime() )))
-                        print("This is {}.".format(info[0]))
-                        print("temperature:{}".format(float(info[3])))
-                        print("humidity:{}".format(float(info[2])))
-                        res = requests.post(url+method+str(i[4:]),{
-                            'temperature': float(info[3]),
-                            'wetness':float(info[2])
-                        })
-                        print(res)
-                    
+
                 
-            
             """
             try:
                 # python3 unicode
