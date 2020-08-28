@@ -73,9 +73,9 @@ Nodes = 12        # number of Nodes
 NodesFollow = 6  # number of Nodes follow the plant bed
 node_list = []
 for n in range(Nodes):
-    node_list.append("Node"+str(n+1))
+    node_list.append(str(n+1))
 for n in range(NodesFollow):
-    node_list.append("Node9"+str(n+1))
+    node_list.append("9"+str(n+1))
 
 number_node = 0            # No. node
 
@@ -105,7 +105,6 @@ class LoRaGateWay(LoRa):
             for i in node_list:
                 if(len(info)==5):
                     if(info[0] == i):
-                        print((type(i))
                         print("Time: {}".format( str(time.ctime() )))
                         print("This is {}.".format(info[0]))
                         print("temperature:{}".format(float(info[3])))
@@ -114,12 +113,12 @@ class LoRaGateWay(LoRa):
                         print("count:{}".format(int(info[1])))
                         
                         # save in Pi...
-                        with open('sensor' + i + '.csv', 'a+') as csvfile:
+                        with open('sensorNode' + i + '.csv', 'a+') as csvfile:
                             writer = csv.writer(csvfile)
                             nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                             writer.writerow([nowT, info[2], info[3], info[4], info[1]]) 
 
-                        res = requests.post(url+method+str(i[4:]),{
+                        res = requests.post(url+method+i[4:],{
                             'temperature': float(info[3]),
                             'wetness':float(info[2]),
                             'par':float(info[4]),
