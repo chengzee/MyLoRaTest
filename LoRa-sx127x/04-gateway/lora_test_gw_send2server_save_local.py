@@ -76,7 +76,12 @@ for n in range(Nodes):
     node_list.append("Node"+str(n+1))
 for n in range(NodesFollow):
     node_list.append("Node9"+str(n+1))
-
+'''
+for n in range(Nodes):
+    node_list.append(str(n+1))
+for n in range(NodesFollow):
+    node_list.append("9"+str(n+1))
+'''
 number_node = 0            # No. node
 
 class LoRaGateWay(LoRa):
@@ -124,6 +129,19 @@ class LoRaGateWay(LoRa):
                             'par':float(info[4]),
                             'time':int(time.time())
                         })
+                        '''
+                        with open('sensorNode' + i + '.csv', 'a+') as csvfile:
+                            writer = csv.writer(csvfile)
+                            nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            writer.writerow([nowT, info[2], info[3], info[4], info[1]]) 
+
+                        res = requests.post(url+method+i,{
+                            'temperature': float(info[3]),
+                            'wetness':float(info[2]),
+                            'par':float(info[4]),
+                            'time':int(time.time())
+                        })
+                        '''
                         print(res)
 
                 
