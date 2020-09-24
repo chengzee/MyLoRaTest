@@ -30,6 +30,9 @@ const int spreadingfactor = 11;       // LoRa SpreadingFactor
 const long signalbandwidth = 125E3;  // LoRa SignalBandwidth      
 int counter = 1;
 float h, t, lux;
+//int sensorPin = 15;
+//float sensorValue = 0;
+float voltage = 0;
 
 void enterSleep(int _ms, int _mode)
 {
@@ -54,9 +57,7 @@ void setup() {
 
 void loop() {
   LoRa.setPins(csPin, resetPin, irqPin);
-  
   digitalWrite(DHTVPIN, HIGH);
-  
   // start the DHT22
   dht.begin();
   // Wait a few seconds between measurements.
@@ -90,7 +91,6 @@ void loop() {
     Serial.println("Failed to read from bh1750 sensor!");
     return;
   }
-  
   digitalWrite(DHTVPIN, LOW);
   
   // ------------------------------------------------------------------------------
@@ -109,8 +109,16 @@ void loop() {
   LoRa.setSpreadingFactor(spreadingfactor);
   LoRa.setSignalBandwidth(signalbandwidth);
   
+  // read the value from the sensor:
+//  sensorValue = analogRead(sensorPin);
+//  voltage = sensorValue*5/4095;
+//  Serial.print("sensorValue = ");
+//  Serial.println(sensorValue);
+//  Serial.print("voltage = ");
+//  Serial.println(voltage);
+  
   Serial.print("Sending packet: ");
-  Serial.print("Node3, ");
+  Serial.print("Node2, ");
   Serial.print(counter);
   Serial.print(", ");
   Serial.print(h);
@@ -118,10 +126,13 @@ void loop() {
   Serial.print(t);
   Serial.print(", ");
   Serial.println(lux);
+//  Serial.print(", ");
+//  Serial.println(voltage);
+ 
   if (counter>1){
     // send packet
     LoRa.beginPacket();
-    LoRa.print("Node3, ");
+    LoRa.print("Node2, ");
     LoRa.print(counter);
     LoRa.print(", ");
     LoRa.print(h);
@@ -129,10 +140,12 @@ void loop() {
     LoRa.print(t);
     LoRa.print(", ");
     LoRa.print(lux);
+//    LoRa.print(", ");
+//    LoRa.print(voltage);
     LoRa.endPacket();
   }
   
   digitalWrite(irqPin, LOW);
   counter++;
-  enterSleep(298000,3);
+  enterSleep(297730,3);
 }
