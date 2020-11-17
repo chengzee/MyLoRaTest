@@ -123,7 +123,6 @@ class LoRaGateWay(LoRa):
                                 writer = csv.writer(csvfile)
                                 nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                 writer.writerow([nowT, info[2], info[3], info[4], info[1]])
-                            print("flag1, save in sensorNode in local")
 
 
                             res = requests.post(url+method+i[4:],{
@@ -134,26 +133,18 @@ class LoRaGateWay(LoRa):
                                 timeout=10
                             )
 
-                            print("flag2, got response status code")
                             print(res.status_code)
                             with open('status.csv', 'a+') as statusfile:
                                 writer = csv.writer(statusfile)
                                 Time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                 writer.writerow([Time, res.status_code, i[4:]])
-                            print("flag3, save the status code in status.csv")
 
                             if res.status_code == 201: 
                                 try:
-                                    print("1, if status code = 201, ...")
                                     # sendding temp data
                                     with open('tempData.csv', 'r+') as tempfile:
-                                        print("2, open tempData.csv, r+, ...")
                                         rows = csv.reader(tempfile)
-                                        print("2.5, csv.reader()")
-                                        # print(rows)
-                                        # print("2.6")
                                         for row in rows:
-                                            print("3, for row in rows")
                                             if len(row)==5:
                                                 keepup = requests.post(url+method+row[4], {
                                                     'temperature': float(row[2]),
@@ -163,26 +154,19 @@ class LoRaGateWay(LoRa):
                                                 })
                                                 print(keepup)
                                                 # for check what message save
-                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                with open('checkStatusafterReconnect.csv', 'a+') as checkfile:
                                                     writer = csv.writer(checkfile)
                                                     nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                                     writer.writerow([nowT, keepup])
-                                                print("3.5, after reconnect then save response status code")
                                                 with open('part1.csv', 'a+') as part1file:
                                                     writer = csv.writer(part1file)
                                                     nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                                     writer.writerow([nowT])
-                                                print("3.6, part1.csv do the same thing with checkcheck.csv")
                                     os.remove("tempData.csv")
-                                    print("4, after we send the disconnected data, we remove temp stored datas")
-                                except:
-                                    print("5, if send temp datas got wrong or because the situation happen like below...")
+                                except: 
                                     with open('tempData.csv', 'w+') as tempfile:
-                                        print("6, open tempdata and write ..., it's different between '2', '2' is use r+ and now '6' is use w+, which is mean now the tempData.csv is empty, so we can't read it")
                                         rows = csv.reader(tempfile)
-                                        print("7, csv.reader the tempdata csv file")
                                         for row in rows:
-                                            print("8, for row in rows ...")
                                             if len(row)==5:
                                                 keepup = requests.post(url+method+row[4], {
                                                     'temperature': float(row[2]),
@@ -192,20 +176,13 @@ class LoRaGateWay(LoRa):
                                                 })
                                                 print(keepup)
                                                 # for check what message save
-                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                with open('checkStatusafterReconnect.csv', 'a+') as checkfile:
                                                     writer = csv.writer(checkfile)
                                                     nowT = int(time.time()*1000)
                                                     writer.writerow([nowT, keepup])
-                                                print("8.5, after reconnect then save response status code")
-                                                
-                                                with open('part2.csv', 'a+') as part2file:
-                                                    writer = csv.writer(part2file)
-                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                                                    writer.writerow([nowT])
-                                                print("8.6, after reconnect then save response status code, part2.csv do the same thing with checkcheck.csv")
+                                                print("Save Status After Reconnect")
                                                 
                                     os.remove("tempData.csv")
-                                    print("9, after sended disconnected data, we remove temp stored datas")
                                 else:
                                     print("File is deleted successfully")
                                 pass
@@ -215,14 +192,12 @@ class LoRaGateWay(LoRa):
                                 with open('tempData.csv', 'a+') as tempfile:
                                     writer = csv.writer(tempfile)
                                     nowT = int(time.time()*1000)
-                                    writer.writerow([nowT, info[2], info[3], info[4], i[4:]])
-                                print("10, sendding got problem, so we save data in tempData until we reconnect")
+                                    writer.writerow([nowT, info[2], info[3], info[4], i[4:], 404])
                                                 
-                                with open('part3.csv', 'a+') as part3file:
+                                with open('when404happen.csv', 'a+') as part3file:
                                     writer = csv.writer(part3file)
                                     nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                     writer.writerow([nowT])
-                                print("10.5, part3.csv record what time is it happend sending problem")
                                                 
                         except:
                             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
@@ -255,6 +230,7 @@ class LoRaGateWay(LoRa):
                         print("humidity:{}".format(float(info[2])))
                         print("par:{}".format(float(info[4])))
                         print("count:{}".format(int(info[1])))
+                        print("voltage:{}".format(float(info[5])))
                         print("timestamp:{}".format(int(time.time())*1000))
 
                         try:
@@ -262,89 +238,70 @@ class LoRaGateWay(LoRa):
                                 writer = csv.writer(csvfile)
                                 nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                 writer.writerow([nowT, info[2], info[3], info[4], info[1]])
-                            print("flag1, save in sensorNode in local")
-
-
+                            
                             res = requests.post(url+method+i,{
                                 'temperature': float(info[3]),
                                 'wetness':float(info[2]),
                                 'par':float(info[4]),
-                                'timestamp':int(time.time()*1000)},
+                                'timestamp':int(time.time()*1000),
+                                'voltage':float(info[5])},
                                 timeout=10
                             )
 
-                            print("flag2, got response status code")
                             print(res.status_code)
                             with open('status.csv', 'a+') as statusfile:
                                 writer = csv.writer(statusfile)
                                 Time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                 writer.writerow([Time, res.status_code, i])
-                            print("flag3, save the status code in status.csv")
-
+                            
                             if res.status_code == 201: 
                                 try:
-                                    print("1, if status code = 201, ...")
                                     # sendding temp data
                                     with open('tempData.csv', 'r+') as tempfile:
-                                        print("2, open tempData.csv, r+, ...")
                                         rows = csv.reader(tempfile)
-                                        print("2.5, csv.reader()")
-                                        # print(rows)
-                                        # print("2.6")
                                         for row in rows:
-                                            print("3, for row in rows")
-                                            if len(row)==5:
+                                            if len(row)==6:
                                                 keepup = requests.post(url+method+row[4], {
                                                     'temperature': float(row[2]),
                                                     'wetness':float(row[1]),
                                                     'par':float(row[3]),
-                                                    'timestamp':int(row[0])
+                                                    'timestamp':int(row[0]),
+                                                    'voltage':float(row[5])
                                                 })
                                                 print(keepup)
                                                 # for check what message save
-                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                with open('checkStatusafterReconnect.csv', 'a+') as checkfile:
                                                     writer = csv.writer(checkfile)
                                                     nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                                     writer.writerow([nowT, keepup])
-                                                print("3.5, after reconnect then save response status code")
+
                                                 with open('part1.csv', 'a+') as part1file:
                                                     writer = csv.writer(part1file)
                                                     nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                                     writer.writerow([nowT])
-                                                print("3.6, part1.csv do the same thing with checkcheck.csv")
+
                                     os.remove("tempData.csv")
-                                    print("4, after we send the disconnected data, we remove temp stored datas")
                                 except:
-                                    print("5, if send temp datas got wrong or because the situation happen like below...")
+                                    
                                     with open('tempData.csv', 'w+') as tempfile:
-                                        print("6, open tempdata and write ..., it's different between '2', '2' is use r+ and now '6' is use w+, which is mean now the tempData.csv is empty, so we can't read it")
                                         rows = csv.reader(tempfile)
-                                        print("7, csv.reader the tempdata csv file")
                                         for row in rows:
-                                            print("8, for row in rows ...")
-                                            if len(row)==5:
+                                            if len(row)==6:
                                                 keepup = requests.post(url+method+row[4], {
                                                     'temperature': float(row[2]),
                                                     'wetness':float(row[1]),
                                                     'par':float(row[3]),
-                                                    'timestamp':int(row[0])
+                                                    'timestamp':int(row[0]),
+                                                    'voltage':float(row[5])
                                                 })
                                                 print(keepup)
                                                 # for check what message save
-                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                with open('checkStatusafterReconnect.csv', 'a+') as checkfile:
                                                     writer = csv.writer(checkfile)
                                                     nowT = int(time.time()*1000)
                                                     writer.writerow([nowT, keepup])
-                                                print("8.5, after reconnect then save response status code")
-                                                
-                                                with open('part2.csv', 'a+') as part2file:
-                                                    writer = csv.writer(part2file)
-                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                                                    writer.writerow([nowT])
-                                                print("8.6, after reconnect then save response status code, part2.csv do the same thing with checkcheck.csv")
-                                                
+                                                  
                                     os.remove("tempData.csv")
-                                    print("9, after sended disconnected data, we remove temp stored datas")
                                 else:
                                     print("File is deleted successfully")
                                 pass
@@ -354,14 +311,12 @@ class LoRaGateWay(LoRa):
                                 with open('tempData.csv', 'a+') as tempfile:
                                     writer = csv.writer(tempfile)
                                     nowT = int(time.time()*1000)
-                                    writer.writerow([nowT, info[2], info[3], info[4], i])
-                                print("10, sendding got problem, so we save data in tempData until we reconnect")
+                                    writer.writerow([nowT, info[2], info[3], info[4], i, info[5]])
                                                 
-                                with open('part3.csv', 'a+') as part3file:
+                                with open('when404happen.csv', 'a+') as part3file:
                                     writer = csv.writer(part3file)
                                     nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                     writer.writerow([nowT])
-                                print("10.5, part3.csv record what time is it happend sending problem")
                                                 
                         except:
                             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
@@ -373,7 +328,7 @@ class LoRaGateWay(LoRa):
                             with open('tempData.csv', 'a+') as tempfile:
                                 writer = csv.writer(tempfile)
                                 nowT = int(time.time()*1000)
-                                writer.writerow([nowT, info[2], info[3], info[4], i])
+                                writer.writerow([nowT, info[2], info[3], info[4], i, info[5]])
                             with open('part4.csv', 'a+') as part4file:
                                 writer = csv.writer(part4file)
                                 nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -413,7 +368,7 @@ class LoRaGateWay(LoRa):
                         with open('tempData.csv', 'a+') as tempfile:
                             writer = csv.writer(tempfile)
                             nowT = int(time.time()*1000)
-                            writer.writerow([nowT, info[2], info[3], info[4], i])
+                            writer.writerow([nowT, info[2], info[3], info[4], i, info[5]])
                         with open('part5.csv', 'a+') as part5file:
                             writer = csv.writer(part5file)
                             nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
