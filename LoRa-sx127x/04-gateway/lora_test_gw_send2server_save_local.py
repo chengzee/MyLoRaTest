@@ -41,7 +41,7 @@ import requests
 
 import csv
 import os
-url="http://icmems.ml:3000"
+url="https://monitor.icmems.ml"
 
 method='/api/sendDatas/'
 
@@ -76,12 +76,12 @@ for n in range(Nodes):
     node_list.append("Node"+str(n+1))
 for n in range(NodesFollow):
     node_list.append("Node9"+str(n+1))
-'''
+
 for n in range(Nodes):
     node_list.append(str(n+1))
 for n in range(NodesFollow):
     node_list.append("9"+str(n+1))
-'''
+
 number_node = 0            # No. node
 
 class LoRaGateWay(LoRa):
@@ -99,15 +99,15 @@ class LoRaGateWay(LoRa):
         payload = self.read_payload(nocheck=True)
         data = ''.join([chr(c) for c in payload])
         
-
-        try:
+        info = data.split(",")
+        for i in node_list:
+            try:
             # _length, _data = packer.Unpack_Str(data)
             # print("Time: {}".format( str(time.ctime() )))
             # print("Length: {}".format( len(data) ))
-            # print("Raw RX: {}".format( data ))
-            info = data.split(",")
+            # print("Raw RX: {}".format( data )) 
             # print(data)
-            for i in node_list:
+           
                 if(len(info)==5):
                     if(info[0] == i):
                         print("Time: {}".format( str(time.ctime() )))
@@ -122,37 +122,72 @@ class LoRaGateWay(LoRa):
                             with open('sensorNode' + i[4:] + '.csv', 'a+') as csvfile:
                                 writer = csv.writer(csvfile)
                                 nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                                writer.writerow([nowT, info[2], info[3], info[4], info[1]]) 
+                                writer.writerow([nowT, info[2], info[3], info[4], info[1]])
+                            print("flag1, save in sensorNode in local")
 
 
                             res = requests.post(url+method+i[4:],{
                                 'temperature': float(info[3]),
                                 'wetness':float(info[2]),
                                 'par':float(info[4]),
-                                'timestamp':int(time.time()*1000)
-                            })
+                                'timestamp':int(time.time()*1000)},
+                                timeout=10
+                            )
+
+                            print("flag2, got response status code")
                             print(res.status_code)
                             with open('status.csv', 'a+') as statusfile:
                                 writer = csv.writer(statusfile)
                                 Time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                 writer.writerow([Time, res.status_code, i[4:]])
+                            print("flag3, save the status code in status.csv")
 
                             if res.status_code == 201: 
                                 try:
-                                    print("1")
+                                    print("1, if status code = 201, ...")
                                     # sendding temp data
-                                    with open('tempData.csv', 'w+') as tempfile:
-                                        print("2")
+                                    with open('tempData.csv', 'r+') as tempfile:
+                                        print("2, open tempData.csv, r+, ...")
                                         rows = csv.reader(tempfile)
-                                        print("2.5")
-                                        print(rows)
+                                        print("2.5, csv.reader()")
+                                        # print(rows)
+                                        # print("2.6")
                                         for row in rows:
-                                            print("3")
+                                            print("3, for row in rows")
                                             if len(row)==5:
                                                 keepup = requests.post(url+method+row[4], {
                                                     'temperature': float(row[2]),
                                                     'wetness':float(row[1]),
-                                                    'par':float(info[3]),
+                                                    'par':float(row[3]),
+                                                    'timestamp':int(row[0])
+                                                })
+                                                print(keepup)
+                                                # for check what message save
+                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                    writer = csv.writer(checkfile)
+                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                                    writer.writerow([nowT, keepup])
+                                                print("3.5, after reconnect then save response status code")
+                                                with open('part1.csv', 'a+') as part1file:
+                                                    writer = csv.writer(part1file)
+                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                                    writer.writerow([nowT])
+                                                print("3.6, part1.csv do the same thing with checkcheck.csv")
+                                    os.remove("tempData.csv")
+                                    print("4, after we send the disconnected data, we remove temp stored datas")
+                                except:
+                                    print("5, if send temp datas got wrong or because the situation happen like below...")
+                                    with open('tempData.csv', 'w+') as tempfile:
+                                        print("6, open tempdata and write ..., it's different between '2', '2' is use r+ and now '6' is use w+, which is mean now the tempData.csv is empty, so we can't read it")
+                                        rows = csv.reader(tempfile)
+                                        print("7, csv.reader the tempdata csv file")
+                                        for row in rows:
+                                            print("8, for row in rows ...")
+                                            if len(row)==5:
+                                                keepup = requests.post(url+method+row[4], {
+                                                    'temperature': float(row[2]),
+                                                    'wetness':float(row[1]),
+                                                    'par':float(row[3]),
                                                     'timestamp':int(row[0])
                                                 })
                                                 print(keepup)
@@ -161,21 +196,34 @@ class LoRaGateWay(LoRa):
                                                     writer = csv.writer(checkfile)
                                                     nowT = int(time.time()*1000)
                                                     writer.writerow([nowT, keepup])
+                                                print("8.5, after reconnect then save response status code")
+                                                
+                                                with open('part2.csv', 'a+') as part2file:
+                                                    writer = csv.writer(part2file)
+                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                                    writer.writerow([nowT])
+                                                print("8.6, after reconnect then save response status code, part2.csv do the same thing with checkcheck.csv")
+                                                
                                     os.remove("tempData.csv")
-                                    print("4")
-                                except FileNotFoundError:
-                                    print("no such file exit")
+                                    print("9, after sended disconnected data, we remove temp stored datas")
                                 else:
                                     print("File is deleted successfully")
                                 pass
 
-                            if res.status_code == 400:
+                            if res.status_code == 404:
                                 # save data until we can sendding
                                 with open('tempData.csv', 'a+') as tempfile:
                                     writer = csv.writer(tempfile)
                                     nowT = int(time.time()*1000)
                                     writer.writerow([nowT, info[2], info[3], info[4], i[4:]])
-
+                                print("10, sendding got problem, so we save data in tempData until we reconnect")
+                                                
+                                with open('part3.csv', 'a+') as part3file:
+                                    writer = csv.writer(part3file)
+                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                    writer.writerow([nowT])
+                                print("10.5, part3.csv record what time is it happend sending problem")
+                                                
                         except:
                             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
                             # print("Non-hexadecimal digit found...")
@@ -183,23 +231,14 @@ class LoRaGateWay(LoRa):
                             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
                             print("Receive: {}".format( data ))
                             
-#                            with open('status.csv', 'a+') as statusfile:
-#                                writer = csv.writer(statusfile)
-#                                Time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-#                                writer.writerow([Time, res.status_code, i[4:]])
                             with open('tempData.csv', 'a+') as tempfile:
                                 writer = csv.writer(tempfile)
                                 nowT = int(time.time()*1000)
                                 writer.writerow([nowT, info[2], info[3], info[4], i[4:]])
-
-
-
-#                            if res.status_code == 400:
-#                                # save data until we can sendding
-#                                with open('tempData.csv', 'a+') as tempfile:
-#                                    writer = csv.writer(tempfile)
-#                                    nowT = int(time.time()*1000)
-#                                    writer.writerow([nowT, info[2], info[3], info[4], i[4:]])
+                            with open('part4.csv', 'a+') as part4file:
+                                writer = csv.writer(part4file)
+                                nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                writer.writerow([nowT])
                             '''
                             try:
                             # python3 unicode
@@ -208,16 +247,177 @@ class LoRaGateWay(LoRa):
                             # python2
                             print("Receive: {}".format( _data ))
                             '''
-        except:
-            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-            # print("Non-hexadecimal digit found...")
-            print("got problem...")
-            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-            print("Receive: {}".format( data ))
-            with open('tempData.csv', 'a+') as tempfile:
-                writer = csv.writer(tempfile)
-                nowT = int(time.time()*1000)
-                writer.writerow([nowT, info[2], info[3], info[4], i[4:]])
+                if(len(info)==6):
+                    if(info[0] == i):
+                        print("Time: {}".format( str(time.ctime() )))
+                        print("This is {}.".format(info[0]))
+                        print("temperature:{}".format(float(info[3])))
+                        print("humidity:{}".format(float(info[2])))
+                        print("par:{}".format(float(info[4])))
+                        print("count:{}".format(int(info[1])))
+                        print("timestamp:{}".format(int(time.time())*1000))
+
+                        try:
+                            with open('sensorNode' + i + '.csv', 'a+') as csvfile:
+                                writer = csv.writer(csvfile)
+                                nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                writer.writerow([nowT, info[2], info[3], info[4], info[1]])
+                            print("flag1, save in sensorNode in local")
+
+
+                            res = requests.post(url+method+i,{
+                                'temperature': float(info[3]),
+                                'wetness':float(info[2]),
+                                'par':float(info[4]),
+                                'timestamp':int(time.time()*1000)},
+                                timeout=10
+                            )
+
+                            print("flag2, got response status code")
+                            print(res.status_code)
+                            with open('status.csv', 'a+') as statusfile:
+                                writer = csv.writer(statusfile)
+                                Time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                writer.writerow([Time, res.status_code, i])
+                            print("flag3, save the status code in status.csv")
+
+                            if res.status_code == 201: 
+                                try:
+                                    print("1, if status code = 201, ...")
+                                    # sendding temp data
+                                    with open('tempData.csv', 'r+') as tempfile:
+                                        print("2, open tempData.csv, r+, ...")
+                                        rows = csv.reader(tempfile)
+                                        print("2.5, csv.reader()")
+                                        # print(rows)
+                                        # print("2.6")
+                                        for row in rows:
+                                            print("3, for row in rows")
+                                            if len(row)==5:
+                                                keepup = requests.post(url+method+row[4], {
+                                                    'temperature': float(row[2]),
+                                                    'wetness':float(row[1]),
+                                                    'par':float(row[3]),
+                                                    'timestamp':int(row[0])
+                                                })
+                                                print(keepup)
+                                                # for check what message save
+                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                    writer = csv.writer(checkfile)
+                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                                    writer.writerow([nowT, keepup])
+                                                print("3.5, after reconnect then save response status code")
+                                                with open('part1.csv', 'a+') as part1file:
+                                                    writer = csv.writer(part1file)
+                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                                    writer.writerow([nowT])
+                                                print("3.6, part1.csv do the same thing with checkcheck.csv")
+                                    os.remove("tempData.csv")
+                                    print("4, after we send the disconnected data, we remove temp stored datas")
+                                except:
+                                    print("5, if send temp datas got wrong or because the situation happen like below...")
+                                    with open('tempData.csv', 'w+') as tempfile:
+                                        print("6, open tempdata and write ..., it's different between '2', '2' is use r+ and now '6' is use w+, which is mean now the tempData.csv is empty, so we can't read it")
+                                        rows = csv.reader(tempfile)
+                                        print("7, csv.reader the tempdata csv file")
+                                        for row in rows:
+                                            print("8, for row in rows ...")
+                                            if len(row)==5:
+                                                keepup = requests.post(url+method+row[4], {
+                                                    'temperature': float(row[2]),
+                                                    'wetness':float(row[1]),
+                                                    'par':float(row[3]),
+                                                    'timestamp':int(row[0])
+                                                })
+                                                print(keepup)
+                                                # for check what message save
+                                                with open('checkcheck.csv', 'a+') as checkfile:
+                                                    writer = csv.writer(checkfile)
+                                                    nowT = int(time.time()*1000)
+                                                    writer.writerow([nowT, keepup])
+                                                print("8.5, after reconnect then save response status code")
+                                                
+                                                with open('part2.csv', 'a+') as part2file:
+                                                    writer = csv.writer(part2file)
+                                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                                    writer.writerow([nowT])
+                                                print("8.6, after reconnect then save response status code, part2.csv do the same thing with checkcheck.csv")
+                                                
+                                    os.remove("tempData.csv")
+                                    print("9, after sended disconnected data, we remove temp stored datas")
+                                else:
+                                    print("File is deleted successfully")
+                                pass
+
+                            if res.status_code == 404:
+                                # save data until we can sendding
+                                with open('tempData.csv', 'a+') as tempfile:
+                                    writer = csv.writer(tempfile)
+                                    nowT = int(time.time()*1000)
+                                    writer.writerow([nowT, info[2], info[3], info[4], i])
+                                print("10, sendding got problem, so we save data in tempData until we reconnect")
+                                                
+                                with open('part3.csv', 'a+') as part3file:
+                                    writer = csv.writer(part3file)
+                                    nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                    writer.writerow([nowT])
+                                print("10.5, part3.csv record what time is it happend sending problem")
+                                                
+                        except:
+                            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+                            # print("Non-hexadecimal digit found...")
+                            print("Sending to server got problem...")
+                            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+                            print("Receive: {}".format( data ))
+                            
+                            with open('tempData.csv', 'a+') as tempfile:
+                                writer = csv.writer(tempfile)
+                                nowT = int(time.time()*1000)
+                                writer.writerow([nowT, info[2], info[3], info[4], i])
+                            with open('part4.csv', 'a+') as part4file:
+                                writer = csv.writer(part4file)
+                                nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                writer.writerow([nowT])
+                            '''
+                            try:
+                            # python3 unicode
+                            print("Receive: {}".format( _data.encode('latin-1').decode('unicode_escape')))
+                            except:
+                            # python2
+                            print("Receive: {}".format( _data ))
+                            '''
+
+            except:
+                if(len(info)==5):
+                    if(info[0] == i):
+                        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+                        # print("Non-hexadecimal digit found...")
+                        print("got problem...")
+                        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+                        print("Receive: {}".format( data ))
+                        with open('tempData.csv', 'a+') as tempfile:
+                            writer = csv.writer(tempfile)
+                            nowT = int(time.time()*1000)
+                            writer.writerow([nowT, info[2], info[3], info[4], i[4:]])
+                        with open('part5.csv', 'a+') as part5file:
+                            writer = csv.writer(part5file)
+                            nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            writer.writerow([nowT])
+                if(len(info)==6):
+                    if(info[0] == i):
+                        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+                        # print("Non-hexadecimal digit found...")
+                        print("got problem...")
+                        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+                        print("Receive: {}".format( data ))
+                        with open('tempData.csv', 'a+') as tempfile:
+                            writer = csv.writer(tempfile)
+                            nowT = int(time.time()*1000)
+                            writer.writerow([nowT, info[2], info[3], info[4], i])
+                        with open('part5.csv', 'a+') as part5file:
+                            writer = csv.writer(part5file)
+                            nowT = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            writer.writerow([nowT])
 
 
         self.set_dio_mapping([1,0,0,0,0,0])    # TX
